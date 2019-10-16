@@ -3,11 +3,11 @@ layout: post
 title: Introducing PyGEOS
 ---
 
-In this blogpost I present my new Python package: *PyGEOS*. PyGEOS is a function library that exposes geospatial operations from GEOS into Python. Arrays of geometries can be operated on with almost zero Python interpreter overhead, leading to performance increases of up to 100 times compared to current *shapely* or *geopandas* usage.
+In this blogpost I present my new Python package: *PyGEOS*. PyGEOS ([documentation](https://pygeos.readthedocs.org)) is a library that exposes geospatial operations from GEOS into Python. Arrays of geometries can be operated on with almost zero Python interpreter overhead, leading to performance increases of up to 100 times compared to current *shapely* or *geopandas* usage.
 
 I aim to keep the API (and performance) of PyGEOS close to that of PostGIS: the de facto standard library of geospatial analysis on large datasets.
 
-This work has been inspired by the efforts of Joris van den Bossche and Matthew Rocklin on accelerating *geopandas*. I recommend reading their earlier blogposts on this subject:
+This work has been inspired by the efforts of Joris Van den Bossche and Matthew Rocklin on accelerating *geopandas*. I recommend reading their earlier blogposts on this subject:
 
 - https://jorisvandenbossche.github.io/blog/2017/09/19/geopandas-cython/
 - http://matthewrocklin.com/blog/work/2017/09/21/accelerating-geopandas-1
@@ -55,7 +55,7 @@ Whenever the reference count becomes zero, Python (more specifically: the *garba
 
 This was the first time I actually did something with the Python C-API. I recommend reading [the Python docs](https://docs.python.org/3/c-api/typeobj.html) or having a look at the [PyGEOS source](https://github.com/pygeos/pygeos/blob/master/src/pygeom.c) if you're interested in how this works exactly.
 
-## Numpy ufuncs
+## NumPy ufuncs
 The functions in PyGEOS are Numpy *universal functions* or *ufuncs* ([further reading](https://docs.scipy.org/doc/numpy/user/c-info.ufunc-tutorial.html)). This makes them array-aware and able to do all the broadcasting gymnastics you may know from NumPy. An example:
 
 ```python
@@ -80,15 +80,15 @@ array([[100.,  90.,  80.,  70.,  60.],
 ```
 
 ## Reprojections using PyPROJ
-PyGEOS provides a way to `apply` functions to coordinates directly. This can be used to translate, scale, or reproject you geometries. An example using PyPROJ to projecting a point from lat/lon to webmercator:
+PyGEOS provides a way to `apply` functions to coordinates directly. This can be used to translate, scale, or reproject you geometries. An example using `pyproj` to project a point from lat/lon to webmercator:
 
 ```python
 import pyproj
 
 def transform(coords):
     x, y = pyproj.transform(
-        pyproj.Proj(init="EPSG:4326"),  # WGS84 lat/lon
-        pyproj.Proj(init="EPSG:3857"),  # webmercator
+        pyproj.CRS("EPSG:4326"),  # WGS84 lat/lon
+        pyproj.CRS("EPSG:3857"),  # webmercator
         *coords.T,
     )
     return np.array([x, y]).T
@@ -132,7 +132,8 @@ As you can see, the performance increase is significant: a factor 4 for `distanc
 To summarize, PyGEOS provides performant geospatial operations using the familiar NumPy array interface.
 
 Stuff we want to do in the future:
-- let [geopandas](http://geopandas.org/) make use of PyGEOS 
+- let [geopandas](http://geopandas.org/) make use of PyGEOS
+- possible integration with [shapely](https://shapely.readthedocs.io)
 - multithreading: release the GIL during GEOS operations for better performance
 - spatial joins using geospatial indexes 
 - providing "prepared geometries" to increase performance when multiple
