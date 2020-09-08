@@ -66,7 +66,7 @@ The results:
 | 8       | 0.74             |
 
 
-What we see is that the multithreading improves performance with a factor of 4. This is no surprise: my CPU allows 4 threads per core. 
+What we see is that the multithreading improves performance with a factor of 4. This is no surprise: my CPU has 4 cores. 
 
 For comparison: in PyGEOS 0.7 the computation takes about 3 seconds, no mather how many threads you use. That is because of the GIL.
 
@@ -76,13 +76,13 @@ Of course, the [GIL](https://wiki.python.org/moin/GlobalInterpreterLock) is ther
 
 However, this was not all. In PyGEOS we are in the situation that we loop over an array with Python objects. So we do in fact make use of Python objects while the GIL is not in place! Of course we could collect the underlying C structs in a seperate loop (while holding the GIL), but this appeared to be not necessary. Access to the ``GEOSGeometry`` is done via a static attribute ``geom->ptr`` on each Python Geometry object. So to retrieve the object, we do not actually use the Python interpreter.
 
-So are we safe? No. We were able to crash the interpeter by constructing a test with 1 thread doing a computation on the ndarray, and the other thread deleting objects from the ndarray. This lead to a Segfault; the first thread was trying to access a geometry that did not exist anymore.
+So are we safe? No. We were able to crash the interpeter by constructing a test with one thread doing a computation on the ndarray, and the other thread deleting objects from the ndarray. This lead to a Segfault; the first thread was trying to access a geometry that did not exist anymore.
 
 Therefore, to guarantee the existence of the python objects during the GIL release, we wrapped each function with a decorator that makes the ndarray read-only ([link](https://github.com/pygeos/pygeos/blob/77123ff4f8c7d065db49b045df3f3796a60d40f1/pygeos/decorators.py#L33)). So, during the functions that release the GIL internally, the ndarrays are locked.
 
 ## Outlook and related projects
 
-As of June 2020 [geopandas](https://github.com/geopandas/geopandas/) includes an optional support for PyGEOS. So the performance benefit of multithreading can also be exploited through combining dask with geopandas. This is being explored currently in the following libraries, both having a different use case in mind:
+As of June 2020 [geopandas](https://github.com/geopandas/geopandas/) includes an optional support for PyGEOS. So the performance benefit of multithreading can also be exploited through combining dask with geopandas (and pygeos). This is being explored currently in the following libraries, both having a different use case in mind:
 
  - [dask-geopandas](https://github.com/jsignell/dask-geopandas)
  - [dask-geomodeling](https://github.com/nens/dask-geomodeling)
