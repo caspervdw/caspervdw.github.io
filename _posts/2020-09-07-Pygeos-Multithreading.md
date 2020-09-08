@@ -10,7 +10,7 @@ For information about PyGEOS, please read my [previous blogpost](https://casperv
 
 ## Multithreading
 
-Multithreading is a technique to parallelize workload on a single CPU core. In contrast to multiprocessing, resources are shared amongst threads: the threads run on the same CPU core and use the same RAM. Because of this, the overhead of multithreading is much smaller than of multiprocessing. However, for Python code, mulithreading is blocked by the Global Interpreter Lock (GIL).
+Multithreading is a technique to parallelize workload. In contrast to multiprocessing, resources are shared amongst threads: the threads use the same RAM. Because of this, the overhead of multithreading is much smaller than of multiprocessing. However, for Python code, mulithreading is blocked by the Global Interpreter Lock (GIL).
 
 Luckily, PyGEOS runs mostly in C++ (GEOS). In PyGEOS 0.8 we now safely lift the GIL, so that you can now take advantage of multithreading.
 
@@ -79,6 +79,16 @@ However, this was not all. In PyGEOS we are in the situation that we loop over a
 So are we safe? No. We were able to crash the interpeter by constructing a test with 1 thread doing a computation on the ndarray, and the other thread deleting objects from the ndarray. This lead to a Segfault; the first thread was trying to access a geometry that did not exist anymore.
 
 Therefore, to guarantee the existence of the python objects during the GIL release, we wrapped each function with a decorator that makes the ndarray read-only ([link](https://github.com/pygeos/pygeos/blob/77123ff4f8c7d065db49b045df3f3796a60d40f1/pygeos/decorators.py#L33)). So, during the functions that release the GIL internally, the ndarrays are locked.
+
+## Outlook and related projects
+
+As of June 2020 [geopandas](https://github.com/geopandas/geopandas/) includes an optional support for PyGEOS. So the performance benefit of multithreading can also be exploited through combining dask with geopandas. This is being explored currently in the following libraries, both having a different use case in mind:
+
+ - [dask-geopandas](https://github.com/jsignell/dask-geopandas)
+ - [dask-geomodeling](https://github.com/nens/dask-geomodeling)
+
+The work on merging pygeos with shapely is also continuing (thanks to Joris Van den Bossche). Check out the [RFC](https://github.com/shapely/shapely-rfc/pull/1) and the upcoming pull requests at [shapely](https://github.com/Toblerity/Shapely).
+
 
 ## Summary
 
